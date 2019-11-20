@@ -15,8 +15,6 @@ import re
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import RegexpTokenizer
-#nltk.download('stopwords')
-#nltk.download('wordnet')
 from nltk.stem.wordnet import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -24,10 +22,13 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 from gensim.models.coherencemodel import CoherenceModel
 import matplotlib.pyplot as plt
+import numpy
 from gensim import corpora
 from gensim.models import LsiModel
+import pickle
 
-stop = ['mentions','dune','dit','com','min','bonjour','cest', 'jai','voir', 'co','avis','faut','dun','a','abord','afin','ah','ai','aie','ainsi','allaient','allo','allons','apres','assez','attendu','au','aucun','aucune','aujourd','aujourdhui','auquel','aura','auront','aussi','autre','autres','aux','auxquelles','auxquels','avaient','avais','avait','avant','avec','avoir','ayant','b','bah','beaucoup','bien','bigre','boum','bravo','brrr','c','ca','car','ce','ceci','cela','celle','celle-ci','celle-là','celles','celles-ci','celles-la','celui','celui-ci','celui-la','cent','cependant','certain','certaine','certaines','certains','certes','ces','cet','cette','ceux','ceux-ci','ceux-la','chacun','chaque','cher','chere','cheres','chers','chez','chiche','chut','ci','cinq','cinquantaine','cinquante','cinquantieme','cinquieme','clac','clic','combien','comme','comment','compris','concernant','contre','couic','crac','d','da','dans','de','debout','dedans','dehors','dela','depuis','derriere','des','desormais','desquelles','desquels','dessous','dessus','deux','deuxieme','deuxiemement','devant','devers','devra','different','differente','differentes','differents','dire','divers','diverse','diverses','dix','dix-huit','dixieme','dix-neuf','dix-sept','doit','doivent','donc','dont','douze','douzieme','dring','du','duquel','durant','e','effet','eh','elle','elle-meme','elles','elles-memes','en','encore','entre','envers','environ','es','est','et','etant','etaient','etais','etait','etant','etc','ete','etre','eu','euh','eux','eux-memes','excepte','f','façon','fais','faire','faisaient','faisant','fait','feront','fi','flac','floc','font','g','gens','h','ha','he','hein','helas','hem','hep','hi','ho','hola','hop','hormis','hors','hou','houp','hue','hui','huit','huitieme','hum','hurrah','i','il','ils','importe','j','je','jusqu','jusque','k','l','la','laquelle','las','le','lequel','les','lesquelles','lesquels','leur','leurs','longtemps','lorsque','lui','lui-meme','m','ma','maint','mais','malgre','me','meme','memes','merci','mes','mien','mienne','miennes','miens','mille','mince','moi','moi-meme','moins','mon','moyennant','n','na','ne','neanmoins','neuf','neuvieme','ni','nombreuses','nombreux','non','nos','notre','notres','nous','nous-memes','nul','o','o|','oh','ohe','ole','olle','on','ont','onze','onzieme','ore','ou','ouf','ouias','oust','ouste','outre','p','paf','pan','par','parmi','partant','particulier','particuliere','particulierement','pas','passe','pendant','personne','peu','peut','peuvent','peux','pff','pfft','pfut','pif','plein','plouf','plus','plusieurs','plutot','pouah','pour','pourquoi','premier','premiere','premierement','pres','proche','psitt','puisque','q','qu','quand','quant','quanta','quant-a-soi','quarante','quatorze','quatre','quatre-vingt','quatrieme','quatriemement','que','quel','quelconque','quelle','quelles','quelque','quelques','quelquun','quels','qui','quiconque','quinze','quoi','quoique','r','revoici','revoila','rien','s','sa','sacrebleu','sans','sapristi','sauf','se','seize','selon','sept','septieme','sera','seront','ses','si','sien','sienne','siennes','siens','sinon','six','sixieme','soi','soi-meme','soit','soixante','son','sont','sous','stop','suis','suivant','sur','surtout','t','ta','tac','tant','te','tel','telle','tellement','telles','tels','tenant','tes','tic','tien','tienne','tiennes','tiens','toc','toi','toi-meme','ton','touchant','toujours','tous','tout','toute','toutes','treize','trente','tres','trois','troisieme','troisiemement','trop','tsoin','tsouin','tu','u','un','une','unes','uns','v','va','vais','vas','ve','vers','via','vif','vifs','vingt','vivat','vive','vives','vlan','voici','voilà','vont','vos','votre','votre','votres','vous','vous-memes','vu','w','x','y','z','zut']
+stop = ['mentions','dune','dit','com','min','bonjour','cest', 'jai','voir', 'co','avis','faut','dun','a','abord','afin','ah','ai','aie','ainsi','allaient','allo','allons','apres','assez','attendu','au','aucun','aucune','aujourd','aujourdhui','auquel','aura','auront','aussi','autre','autres','aux','auxquelles','auxquels','avaient','avais','avait','avant','avec','avoir','ayant','b','bah','beaucoup','bien','bigre','boum','bravo','brrr','c','ca','car','ce','ceci','cela','celle','celle-ci','celle','celles','celles-ci','celles-la','celui','celui-ci','celui-la','cent','cependant','certain','certaine','certaines','certains','certes','ces','cet','cette','ceux','ceux-ci','ceux-la','chacun','chaque','cher','chere','cheres','chers','chez','chiche','chut','ci','cinq','cinquantaine','cinquante','cinquantieme','cinquieme','clac','clic','combien','comme','comment','compris','concernant','contre','couic','crac','d','da','dans','de','debout','dedans','dehors','dela','depuis','derriere','des','desormais','desquelles','desquels','dessous','dessus','deux','deuxieme','deuxiemement','devant','devers','devra','different','differente','differentes','differents','dire','divers','diverse','diverses','dix','dix-huit','dixieme','dix-neuf','dix-sept','doit','doivent','donc','dont','douze','douzieme','dring','du','duquel','durant','e','effet','eh','elle','elle-meme','elles','elles-memes','en','encore','entre','envers','environ','es','est','et','etant','etaient','etais','etait','etant','etc','ete','etre','eu','euh','eux','eux-memes','excepte','f','façon','fais','faire','faisaient','faisant','fait','feront','fi','flac','floc','font','g','gens','h','ha','he','hein','helas','hem','hep','hi','ho','hola','hop','hormis','hors','hou','houp','hue','hui','huit','huitieme','hum','hurrah','i','il','ils','importe','j','je','jusqu','jusque','k','l','la','laquelle','las','le','lequel','les','lesquelles','lesquels','leur','leurs','longtemps','lorsque','lui','lui-meme','m','ma','maint','mais','malgre','me','meme','memes','merci','mes','mien','mienne','miennes','miens','mille','mince','moi','moi-meme','moins','mon','moyennant','n','na','ne','neanmoins','neuf','neuvieme','ni','nombreuses','nombreux','non','nos','notre','notres','nous','nous-memes','nul','o','o|','oh','ohe','ole','olle','on','ont','onze','onzieme','ore','ou','ouf','ouias','oust','ouste','outre','p','paf','pan','par','parmi','partant','particulier','particuliere','particulierement','pas','passe','pendant','personne','peu','peut','peuvent','peux','pff','pfft','pfut','pif','plein','plouf','plus','plusieurs','plutot','pouah','pour','pourquoi','premier','premiere','premierement','pres','proche','psitt','puisque','q','qu','quand','quant','quanta','quant-a-soi','quarante','quatorze','quatre','quatre-vingt','quatrieme','quatriemement','que','quel','quelconque','quelle','quelles','quelque','quelques','quelquun','quels','qui','quiconque','quinze','quoi','quoique','r','revoici','revoila','rien','s','sa','sacrebleu','sans','sapristi','sauf','se','seize','selon','sept','septieme','sera','seront','ses','si','sien','sienne','siennes','siens','sinon','six','sixieme','soi','soi-meme','soit','soixante','son','sont','sous','stop','suis','suivant','sur','surtout','t','ta','tac','tant','te','tel','telle','tellement','telles','tels','tenant','tes','tic','tien','tienne','tiennes','tiens','toc','toi','toi-meme','ton','touchant','toujours','tous','tout','toute','toutes','treize','trente','tres','trois','troisieme','troisiemement','trop','tsoin','tsouin','tu','u','un','une','unes','uns','v','va','vais','vas','ve','vers','via','vif','vifs','vingt','vivat','vive','vives','vlan','voici','voila','vont','vos','votre','votre','votres','vous','vous-memes','vu','w','x','y','z','zut']
+
 
 
 class GetList:
@@ -63,7 +64,14 @@ class GetList:
             return []
         else:
             return srp_response
-    
+    def get_results(self, keywords):
+        allinfo = []
+        if (type(keywords) is int):
+            allinfo = self.get_results_from_taskid(keywords)
+        else:
+            allinfo = self.get_results_from_keywords(keywords)
+        return allinfo
+
     def extract_url_from_results(self, data):
         url_result = []
         for i in data["results"]["organic"]:
@@ -119,10 +127,25 @@ class GetList:
             text = " ".join(text)
             corpus.append(text)
         return corpus
+    def write_corpus_to_file(self,corpus):
+        with open("corpus.txt", "wb") as fp:
+            pickle.dump(corpus, fp)
+
+    def write_corpus_to_file_from_keywords(self, keywords):
+        allinfo = self.get_results(keywords)
+        vim = self.extract_url_from_results(allinfo)
+        tex = self.extract_text_from_url(vim)
+        corpus = self.normalize_text_list(tex)
+        self.write_corpus_to_file(corpus)
+    def read_corpus_from_file(self, filename):
+        corpus = []
+        with open(filename, 'rb') as fp:
+            corpus = pickle.load(fp)
+        return corpus
 
     def get_top_n_ygrams_words(self, corpus, n=None, y=1):
         vec = CountVectorizer(min_df = 0.1,stop_words=self.new_stopwords_list, max_features=10000, ngram_range=(y,y)).fit(corpus)
-        bag_of_words = vec.transform(corpus)
+        bag_of_words  = vec.transform(corpus)
         sum_words = bag_of_words.sum(axis=0) 
         words_freq = [(word, sum_words[0, idx]) for word, idx in      
                     vec.vocabulary_.items()]
@@ -130,9 +153,9 @@ class GetList:
                         reverse=True)
         frame =  pd.DataFrame(words_freq[:n])
         switcher = {
-        1: "Mono-gram",
-        2: "Bi-gram",
-        3: "Tri-gram",
+        1: "Monogram",
+        2: "Bigram",
+        3: "Trigram",
         }
         switcherFreq = {
         1: "Freq_Mono",
@@ -205,6 +228,9 @@ class GetList:
                                                                 stop, start, step)
         # Show graph
         x = range(start, stop, step)
+        min_coherence = coherence_values
+        min_coherence[numpy.where(min_coherence > 0.4)]
+        print(min_coherence)
         plt.plot(x, coherence_values)
         plt.xlabel("Number of Topics")
         plt.ylabel("Coherence score")
@@ -217,26 +243,33 @@ class GetList:
             token = i.split()
             gensim.append(token)
         return gensim
-
+    def generate_results(self, keywords):
+        allinfo = self.get_results(keywords)
+        vim = self.extract_url_from_results(allinfo)
+        tex = self.extract_text_from_url(vim)
+        corpus = self.normalize_text_list(tex)
+        gensim = s.corpus_to_gensim(corpus)
+        model = s.create_gensim_lsa_model(gensim,10,3)
+        #start,stop,step = 2,12,1
+        #s.plot_graph(gensim,start,stop,step)
+        results = self.get_all_ygrams(corpus, 40, 20, 10)
+        print(results)
+        return results
+    def generate_results_from_file(self, filename):
+        corpus = self.read_corpus_from_file(filename)
+        gensim = s.corpus_to_gensim(corpus)
+        model = s.create_gensim_lsa_model(gensim,10,3)
+        #start,stop,step = 2,12,1
+        #s.plot_graph(gensim,start,stop,step)
+        results = self.get_all_ygrams(corpus, 40, 20, 10)
+        print(results)
+        return results
 
 
 s = GetList()
-allinfo = s.get_results_from_keywords("java cryptography elliptic")
-#allinfo = s.get_results_from_taskid(12413764008)
-vim = s.extract_url_from_results(allinfo)
-tex = s.extract_text_from_url(vim)
-#tex = ["Comment optimiser son site web", "comment optimiser le contenu de son site web pour le seo", "le référencement seo permet d'améliorer votre position sur google"]
-corpus = s.normalize_text_list(tex)
-tt = []
-for i in corpus:
-    token = i.split()
-    tt.append(token)
-start,stop,step=2,12,1
-model= s.create_gensim_lsa_model(tt,10,3)
-results = s.get_all_ygrams(corpus, 40, 20, 10)
-print(results)
+s.generate_results_from_file("corpus.txt")
+#s.write_corpus_to_file_from_keywords("Comment optimiser son site")
 
-#organicallinfo= allinfo["results"]["organic"]
 
 
 
