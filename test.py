@@ -1,26 +1,65 @@
-import nltk
 import re
-from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
-from nltk.tokenize import RegexpTokenizer
-#nltk.download('stopwords')
-#nltk.download('wordnet')
-from nltk.stem.wordnet import WordNetLemmatizer
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfTransformer
-import unicodedata
+from urllib.parse import urljoin, urlsplit, SplitResult
+import requests
+from bs4 import BeautifulSoup
 
-stop_words = set(stopwords.words("french"))
-test = str(unicodedata.normalize('NFKD', re.sub("'"," ", "j'ai c'est balîses")).encode('ASCII', 'ignore'))
-tt = re.sub('[^a-zA-Z0-9]', ' ', test)
-t = re.sub("&lt;/?.*?&gt;"," &lt;&gt; ",tt)
-text = re.sub("(\\d|\\W)+"," ",t)
-print(text)
-text = text.split()
 
-ps=PorterStemmer()
-lem = WordNetLemmatizer()
-text = [word for word in text if not word in  
-                    stop_words] 
-text = " ".join(text)
-print(text)
+class RecursiveScraper:
+    ''' Scrape URLs in a recursive manner.
+    '''
+    def __init__(self, url):
+        ''' Constructor to initialize domain name and main URL.
+        '''
+        self.domain = urlsplit(url).netloc
+        self.mainurl = url
+        self.urls = set()
+
+    def preprocess_url(self, referrer, url):
+        ''' Clean and filter URLs before scraping.
+        '''
+        if not url:
+            return None
+
+        fields = urlsplit(urljoin(referrer, url))._asdict() # convert to absolute URLs and split
+        fields['path'] = re.sub(r'/$', '', fields['path']) # remove trailing /
+        fields['fragment'] = '' # remove targets within a page
+        fields = SplitResult(**fields)
+        if fields.netloc == self.domain:
+            # Scrape pages of current domain only
+            cleanurl = ''
+            if fields.scheme == 'http':
+                cleanurl = fields.geturl()
+                cleanurl = cleanurl.replace('http:', 'https:', 1)
+            else:
+                cleanurl = fields.geturl()
+                
+            if cleanurl not in self.urls and cleanurl not in self.urls:
+                # Return URL only if it's not already in list
+                return cleanurl
+
+        return None
+
+    def scrape(self, url=None):
+        ''' Scrape the URL and its outward links in a depth-first order.
+            If URL argument is None, start from main page.
+        '''
+        if url is None:
+            url = self.mainurl
+
+        print("Scraping {:s} ...".format(url))
+        self.urls.add(url)
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'lxml')
+        for link in soup.findAll("a"):
+            childurl = self.preprocess_url(url, link.get("href"))
+            if childurl:
+                try:
+                    self.scrape(childurl)
+                except: 
+                    print("childurl:", childurl)
+
+
+if __name__ == '__main__':
+    rscraper = RecursiveScraper("https://mosquitoraptor.com")
+    rscraper.scrape()
+    print(rscraper.urls)

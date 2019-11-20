@@ -9,9 +9,11 @@ from json import dumps
 from random import Random
 from inscriptis import get_text
 from client import RestClient
+from test import RecursiveScraper
 import unicodedata
 import nltk
 import re
+import os.path
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import RegexpTokenizer
@@ -216,26 +218,47 @@ class GetList:
         model_list = []
         for num_topics in range(start, stop, step):
             # generate LSA model
+            print("Number of topics: ", num_topics)
             model = LsiModel(doc_term_matrix, num_topics=num_topics, id2word = dictionary)  # train model
             model_list.append(model)
             coherencemodel = CoherenceModel(model=model, texts=doc_clean, dictionary=dictionary, coherence='c_v')
-            coherence_values.append(coherencemodel.get_coherence())
+            coherenceSS = coherencemodel.get_coherence()
+            coherence_values.append(coherenceSS)
         return model_list, coherence_values
     
     def plot_graph(self, doc_clean,start, stop, step):
         dictionary,doc_term_matrix=self.prepare_corpus(doc_clean)
+        
         model_list, coherence_values = self.compute_coherence_values(dictionary, doc_term_matrix,doc_clean,
                                                                 stop, start, step)
         # Show graph
+        
         x = range(start, stop, step)
-        min_coherence = coherence_values
-        min_coherence[numpy.where(min_coherence > 0.4)]
-        print(min_coherence)
+        for i in range(len(coherence_values)):
+            if float(coherence_values[i]) > float("0.4"):
+                print(coherence_values[i])
+        
         plt.plot(x, coherence_values)
         plt.xlabel("Number of Topics")
         plt.ylabel("Coherence score")
         plt.legend(("coherence_values"), loc='best')
         plt.show()
+    def calculate_optimal_coherence_value(self, doc_clean, start, stop, step):
+        dictionary,doc_term_matrix=self.prepare_corpus(doc_clean)
+        model_list, coherence_values = self.compute_coherence_values(dictionary, doc_term_matrix,doc_clean,
+                                                                stop, start, step)
+        max = 0
+        topics = 0
+
+        for i in range(len(coherence_values)):
+            if float(coherence_values[i]) > float("0.4"):
+                if coherence_values[i] > max:
+                    topics = i
+                print(coherence_values[i])
+        return topics
+    def generate_optimal_topic(self, doc_clean, start, stop, step):
+        topics = self.calculate_optimal_coherence_value(doc_clean, start, stop, step)
+        print(self.create_gensim_lsa_model(doc_clean,topics,3))
     
     def corpus_to_gensim(self,corpus):
         gensim = []
@@ -243,31 +266,57 @@ class GetList:
             token = i.split()
             gensim.append(token)
         return gensim
+
     def generate_results(self, keywords):
         allinfo = self.get_results(keywords)
         vim = self.extract_url_from_results(allinfo)
         tex = self.extract_text_from_url(vim)
         corpus = self.normalize_text_list(tex)
-        gensim = s.corpus_to_gensim(corpus)
-        model = s.create_gensim_lsa_model(gensim,10,3)
+        gensim = self.corpus_to_gensim(corpus)
+        model = self.create_gensim_lsa_model(gensim,10,3)
         #start,stop,step = 2,12,1
-        #s.plot_graph(gensim,start,stop,step)
+        #self.plot_graph(gensim,start,stop,step)
         results = self.get_all_ygrams(corpus, 40, 20, 10)
         print(results)
         return results
+
     def generate_results_from_file(self, filename):
         corpus = self.read_corpus_from_file(filename)
-        gensim = s.corpus_to_gensim(corpus)
-        model = s.create_gensim_lsa_model(gensim,10,3)
-        #start,stop,step = 2,12,1
-        #s.plot_graph(gensim,start,stop,step)
+        gensim = self.corpus_to_gensim(corpus)
+        #model = self.create_gensim_lsa_model(gensim,10,3)
+        start,stop,step = 2,10,1
+
+        self.generate_optimal_topic(gensim,start,stop,step)
+        #results = self.get_all_ygrams(corpus, 40, 20, 10)
+        #print(results)
+        return 1
+
+    def generate_results_from_url(self, url):
+        rscraper = RecursiveScraper(url)
+        rscraper.scrape()
+        rscraper.urls
+        tex = self.extract_text_from_url(rscraper.urls)
+        corpus = self.normalize_text_list(tex)
+        gensim = self.corpus_to_gensim(corpus)
+        #model = self.create_gensim_lsa_model(gensim,10,3)
+        start,stop,step = 2,10,1
+
+        self.generate_optimal_topic(gensim,start,stop,step)
         results = self.get_all_ygrams(corpus, 40, 20, 10)
         print(results)
         return results
 
 
-s = GetList()
-s.generate_results_from_file("corpus.txt")
+def main():
+    s = GetList()
+    s.generate_results_from_url("https://epita.fr")
+    #s.write_corpus_to_file_from_keywords("Comment optimiser son site")
+    #s.generate_results_from_file("corpus.txt")
+
+if __name__ == "__main__":
+    main()
+
+
 #s.write_corpus_to_file_from_keywords("Comment optimiser son site")
 
 
