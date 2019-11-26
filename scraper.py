@@ -55,11 +55,11 @@ class RecursiveScraper:
             if childurl:
                 try:
                     self.scrape(childurl)
-                except: 
-                    print("childurl:", childurl)
+                except:
+                    e = ''
 
 
 if __name__ == '__main__':
-    rscraper = RecursiveScraper("https://mosquitoraptor.com")
+    rscraper = RecursiveScraper("https://www.devlup.fr")
     rscraper.scrape()
     print(rscraper.urls)

@@ -9,7 +9,7 @@ from json import dumps
 from random import Random
 from inscriptis import get_text
 from client import RestClient
-from test import RecursiveScraper
+from scraper import RecursiveScraper
 import unicodedata
 import nltk
 import re
@@ -29,7 +29,7 @@ from gensim import corpora
 from gensim.models import LsiModel
 import pickle
 
-stop = ['mentions','dune','dit','com','min','bonjour','cest', 'jai','voir', 'co','avis','faut','dun','a','abord','afin','ah','ai','aie','ainsi','allaient','allo','allons','apres','assez','attendu','au','aucun','aucune','aujourd','aujourdhui','auquel','aura','auront','aussi','autre','autres','aux','auxquelles','auxquels','avaient','avais','avait','avant','avec','avoir','ayant','b','bah','beaucoup','bien','bigre','boum','bravo','brrr','c','ca','car','ce','ceci','cela','celle','celle-ci','celle','celles','celles-ci','celles-la','celui','celui-ci','celui-la','cent','cependant','certain','certaine','certaines','certains','certes','ces','cet','cette','ceux','ceux-ci','ceux-la','chacun','chaque','cher','chere','cheres','chers','chez','chiche','chut','ci','cinq','cinquantaine','cinquante','cinquantieme','cinquieme','clac','clic','combien','comme','comment','compris','concernant','contre','couic','crac','d','da','dans','de','debout','dedans','dehors','dela','depuis','derriere','des','desormais','desquelles','desquels','dessous','dessus','deux','deuxieme','deuxiemement','devant','devers','devra','different','differente','differentes','differents','dire','divers','diverse','diverses','dix','dix-huit','dixieme','dix-neuf','dix-sept','doit','doivent','donc','dont','douze','douzieme','dring','du','duquel','durant','e','effet','eh','elle','elle-meme','elles','elles-memes','en','encore','entre','envers','environ','es','est','et','etant','etaient','etais','etait','etant','etc','ete','etre','eu','euh','eux','eux-memes','excepte','f','façon','fais','faire','faisaient','faisant','fait','feront','fi','flac','floc','font','g','gens','h','ha','he','hein','helas','hem','hep','hi','ho','hola','hop','hormis','hors','hou','houp','hue','hui','huit','huitieme','hum','hurrah','i','il','ils','importe','j','je','jusqu','jusque','k','l','la','laquelle','las','le','lequel','les','lesquelles','lesquels','leur','leurs','longtemps','lorsque','lui','lui-meme','m','ma','maint','mais','malgre','me','meme','memes','merci','mes','mien','mienne','miennes','miens','mille','mince','moi','moi-meme','moins','mon','moyennant','n','na','ne','neanmoins','neuf','neuvieme','ni','nombreuses','nombreux','non','nos','notre','notres','nous','nous-memes','nul','o','o|','oh','ohe','ole','olle','on','ont','onze','onzieme','ore','ou','ouf','ouias','oust','ouste','outre','p','paf','pan','par','parmi','partant','particulier','particuliere','particulierement','pas','passe','pendant','personne','peu','peut','peuvent','peux','pff','pfft','pfut','pif','plein','plouf','plus','plusieurs','plutot','pouah','pour','pourquoi','premier','premiere','premierement','pres','proche','psitt','puisque','q','qu','quand','quant','quanta','quant-a-soi','quarante','quatorze','quatre','quatre-vingt','quatrieme','quatriemement','que','quel','quelconque','quelle','quelles','quelque','quelques','quelquun','quels','qui','quiconque','quinze','quoi','quoique','r','revoici','revoila','rien','s','sa','sacrebleu','sans','sapristi','sauf','se','seize','selon','sept','septieme','sera','seront','ses','si','sien','sienne','siennes','siens','sinon','six','sixieme','soi','soi-meme','soit','soixante','son','sont','sous','stop','suis','suivant','sur','surtout','t','ta','tac','tant','te','tel','telle','tellement','telles','tels','tenant','tes','tic','tien','tienne','tiennes','tiens','toc','toi','toi-meme','ton','touchant','toujours','tous','tout','toute','toutes','treize','trente','tres','trois','troisieme','troisiemement','trop','tsoin','tsouin','tu','u','un','une','unes','uns','v','va','vais','vas','ve','vers','via','vif','vifs','vingt','vivat','vive','vives','vlan','voici','voila','vont','vos','votre','votre','votres','vous','vous-memes','vu','w','x','y','z','zut']
+stop = ['pouvez','permet','très','être','mentions','dune','dit','com','min','bonjour','cest', 'jai','voir', 'co','avis','faut','dun','a','abord','afin','ah','ai','aie','ainsi','allaient','allo','allons','apres','assez','attendu','au','aucun','aucune','aujourd','aujourdhui','auquel','aura','auront','aussi','autre','autres','aux','auxquelles','auxquels','avaient','avais','avait','avant','avec','avoir','ayant','b','bah','beaucoup','bien','bigre','boum','bravo','brrr','c','ca','car','ce','ceci','cela','celle','celle-ci','celle','celles','celles-ci','celles-la','celui','celui-ci','celui-la','cent','cependant','certain','certaine','certaines','certains','certes','ces','cet','cette','ceux','ceux-ci','ceux-la','chacun','chaque','cher','chere','cheres','chers','chez','chiche','chut','ci','cinq','cinquantaine','cinquante','cinquantieme','cinquieme','clac','clic','combien','comme','comment','compris','concernant','contre','couic','crac','d','da','dans','de','debout','dedans','dehors','dela','depuis','derriere','des','desormais','desquelles','desquels','dessous','dessus','deux','deuxieme','deuxiemement','devant','devers','devra','different','differente','differentes','differents','dire','divers','diverse','diverses','dix','dix-huit','dixieme','dix-neuf','dix-sept','doit','doivent','donc','dont','douze','douzieme','dring','du','duquel','durant','e','effet','eh','elle','elle-meme','elles','elles-memes','en','encore','entre','envers','environ','es','est','et','etant','etaient','etais','etait','etant','etc','ete','etre','eu','euh','eux','eux-memes','excepte','f','façon','fais','faire','faisaient','faisant','fait','feront','fi','flac','floc','font','g','gens','h','ha','he','hein','helas','hem','hep','hi','ho','hola','hop','hormis','hors','hou','houp','hue','hui','huit','huitieme','hum','hurrah','i','il','ils','importe','j','je','jusqu','jusque','k','l','la','laquelle','las','le','lequel','les','lesquelles','lesquels','leur','leurs','longtemps','lorsque','lui','lui-meme','m','ma','maint','mais','malgre','me','meme','memes','merci','mes','mien','mienne','miennes','miens','mille','mince','moi','moi-meme','moins','mon','moyennant','n','na','ne','neanmoins','neuf','neuvieme','ni','nombreuses','nombreux','non','nos','notre','notres','nous','nous-memes','nul','o','o|','oh','ohe','ole','olle','on','ont','onze','onzieme','ore','ou','ouf','ouias','oust','ouste','outre','p','paf','pan','par','parmi','partant','particulier','particuliere','particulierement','pas','passe','pendant','personne','peu','peut','peuvent','peux','pff','pfft','pfut','pif','plein','plouf','plus','plusieurs','plutot','pouah','pour','pourquoi','premier','premiere','premierement','pres','proche','psitt','puisque','q','qu','quand','quant','quanta','quant-a-soi','quarante','quatorze','quatre','quatre-vingt','quatrieme','quatriemement','que','quel','quelconque','quelle','quelles','quelque','quelques','quelquun','quels','qui','quiconque','quinze','quoi','quoique','r','revoici','revoila','rien','s','sa','sacrebleu','sans','sapristi','sauf','se','seize','selon','sept','septieme','sera','seront','ses','si','sien','sienne','siennes','siens','sinon','six','sixieme','soi','soi-meme','soit','soixante','son','sont','sous','stop','suis','suivant','sur','surtout','t','ta','tac','tant','te','tel','telle','tellement','telles','tels','tenant','tes','tic','tien','tienne','tiennes','tiens','toc','toi','toi-meme','ton','touchant','toujours','tous','tout','toute','toutes','treize','trente','tres','trois','troisieme','troisiemement','trop','tsoin','tsouin','tu','u','un','une','unes','uns','v','va','vais','vas','ve','vers','via','vif','vifs','vingt','vivat','vive','vives','vlan','voici','voila','vont','vos','votre','votre','votres','vous','vous-memes','vu','w','x','y','z','zut']
 
 
 
@@ -85,28 +85,31 @@ class GetList:
         count = 0
         for i in list:
             try:
-                html = urllib.request.urlopen(i, timeout=3).read().decode('utf-8')
+                html = requests.get(i).text
+                #html = urllib.request.urlopen(i, timeout=3).read().decode("utf8")
                 text.append(get_text(html))
                 count += 1
             except:
                 print("Error: " + i)
+        print("Count = ", count)
         return text
 
     def normalize_text_list(self, textArray):
         corpus = []
         for i in range(len(textArray)):
             #Remove accents
-            text = re.sub("'"," ", textArray[i])
+            text = re.sub("'","  ", textArray[i])
 
             text = re.sub('"'," ", text)
 
             # Removes urls
             text = re.sub("/(?:(?:https?|ftp|file):\/\/|www\.|ftp\.)(?:\([-A-Z0-9+&@#\/%=~_|$?!:,.]*\)|[-A-Z0-9+&@#\/%=~_|$?!:,.])*(?:\([-A-Z0-9+&@#\/%=~_|$?!:,.]*\)|[A-Z0-9+&@#\/%=~_|$])/igm", " ", text)
 
-            text = str(unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore'))
+            #text = str(unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore'))
 
             #Remove Special characters
-            text = re.sub('[^a-zA-Z0-9]', ' ', text)
+            #text = re.sub('[^a-zA-Z0-9]', ' ', text)
+            text = re.sub('[^a-zA-Z0-9áéèíóúÁÉÍÓÚâêîôÂÊÎÔãõÃÕçÇû: ]', ' ', text)
             
             #Convert to lowercase
             text = text.lower()
@@ -138,7 +141,13 @@ class GetList:
         vim = self.extract_url_from_results(allinfo)
         tex = self.extract_text_from_url(vim)
         corpus = self.normalize_text_list(tex)
-        self.write_corpus_to_file(corpus)
+        self.write_corpus_to_file(tex)
+    def write_corpus_to_file_not_normalized_from_keywords(self, keywords):
+        allinfo = self.get_results(keywords)
+        vim = self.extract_url_from_results(allinfo)
+        tex = self.extract_text_from_url(vim)
+        self.write_corpus_to_file(tex)
+    
     def read_corpus_from_file(self, filename):
         corpus = []
         with open(filename, 'rb') as fp:
@@ -251,7 +260,7 @@ class GetList:
         topics = 0
 
         for i in range(len(coherence_values)):
-            if float(coherence_values[i]) > float("0.4"):
+            if float(coherence_values[i]) > float("0.35"):
                 if coherence_values[i] > max:
                     topics = i
                 print(coherence_values[i])
@@ -273,22 +282,23 @@ class GetList:
         tex = self.extract_text_from_url(vim)
         corpus = self.normalize_text_list(tex)
         gensim = self.corpus_to_gensim(corpus)
-        model = self.create_gensim_lsa_model(gensim,10,3)
-        #start,stop,step = 2,12,1
+        #model = self.create_gensim_lsa_model(gensim,10,3)
+        start,stop,step = 2,10,1
         #self.plot_graph(gensim,start,stop,step)
+        self.generate_optimal_topic(gensim,start,stop,step)
         results = self.get_all_ygrams(corpus, 40, 20, 10)
         print(results)
         return results
 
     def generate_results_from_file(self, filename):
         corpus = self.read_corpus_from_file(filename)
+        corpus = self.normalize_text_list(corpus)
         gensim = self.corpus_to_gensim(corpus)
         #model = self.create_gensim_lsa_model(gensim,10,3)
         start,stop,step = 2,10,1
-
         self.generate_optimal_topic(gensim,start,stop,step)
-        #results = self.get_all_ygrams(corpus, 40, 20, 10)
-        #print(results)
+        results = self.get_all_ygrams(corpus, 100, 40, 10)
+        print(results)
         return 1
 
     def generate_results_from_url(self, url):
@@ -300,7 +310,6 @@ class GetList:
         gensim = self.corpus_to_gensim(corpus)
         #model = self.create_gensim_lsa_model(gensim,10,3)
         start,stop,step = 2,10,1
-
         self.generate_optimal_topic(gensim,start,stop,step)
         results = self.get_all_ygrams(corpus, 40, 20, 10)
         print(results)
@@ -309,9 +318,12 @@ class GetList:
 
 def main():
     s = GetList()
-    s.generate_results_from_url("https://epita.fr")
-    #s.write_corpus_to_file_from_keywords("Comment optimiser son site")
-    #s.generate_results_from_file("corpus.txt")
+    #s.generate_results("comment optimiser une image pour le web")
+    #s.generate_results_from_url("https://epita.fr")
+    s.write_corpus_to_file_not_normalized_from_keywords(12732342510)
+    #corpus = s.read_corpus_from_file("corpus.txt")
+
+    s.generate_results_from_file("corpus.txt")
 
 if __name__ == "__main__":
     main()
@@ -320,6 +332,6 @@ if __name__ == "__main__":
 #s.write_corpus_to_file_from_keywords("Comment optimiser son site")
 
 
-
+#spacy 
 
     
